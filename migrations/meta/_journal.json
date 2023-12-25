@@ -1,0 +1,20 @@
+{
+  "version": "5",
+  "dialect": "pg",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1703530707008,
+      "tag": "0000_vengeful_kinsey_walden",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1703533215385,
+      "tag": "0001_broken_quicksilver",
+      "breakpoints": true
+    }
+  ]
+}
