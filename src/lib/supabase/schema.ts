@@ -10,7 +10,7 @@ import {
 } from "drizzle-orm/pg-core"
 import { prices, subscriptionStatus } from "../../../migrations/schema"
 
-export const workspaces = pgTable("workspace", {
+export const workspaces = pgTable("workspaces", {
   id: uuid("id").defaultRandom().primaryKey().notNull(),
   createdAt: timestamp("created_at", {
     withTimezone: true,
