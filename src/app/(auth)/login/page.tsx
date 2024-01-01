@@ -19,7 +19,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import Loader from "@/components/Loader"
+import Loader from "@/components/global/Loader"
 import { actionLoginUser } from "@/lib/serverActions/auth-actions"
 
 const LoginPage = () => {
