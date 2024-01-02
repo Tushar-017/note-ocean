@@ -1,6 +1,9 @@
-// "use server"
+"use server"
+import { validate } from "uuid"
+import { folders, workspaces } from "../../../migrations/schema"
 import db from "./db"
-import { Subscription } from "./supabase.types"
+import { Folder, Subscription, workspace } from "./supabase.types"
+import { eq } from "drizzle-orm"
 
 export const getUserSubscriptionStatus = async (userId: string) => {
   try {
@@ -14,3 +17,63 @@ export const getUserSubscriptionStatus = async (userId: string) => {
     return { data: null, error: `Error` }
   }
 }
+
+export const createWorkspace = async (workspace: workspace) => {
+  try {
+    const response = await db.insert(workspaces).values(workspace)
+    return { data: null, error: null }
+  } catch (error) {
+    console.log(error)
+    return { data: null, error: "Error" }
+  }
+}
+
+export const getFolders = async (workspaceId: string) => {
+  const isValid = validate(workspaceId)
+  if (!isValid) return { data: null, error: "Error" }
+
+  try {
+    const results: Folder[] | [] = await db
+      .select()
+      .from(folders)
+      .orderBy(folders.createdAt)
+      .where(eq(folders.workspaceId, workspaceId))
+
+    return { data: results, error: null }
+  } catch (error) {
+    return { data: null, error: "Error" }
+  }
+}
+
+// export const getPrivateWorkspaces = async (userId: string) => {
+//   if (!userId) return [];
+//   const privateWorkspaces = (await db
+//     .select({
+//       id: workspaces.id,
+//       createdAt: workspaces.createdAt,
+//       workspaceOwner: workspaces.workspaceOwner,
+//       title: workspaces.title,
+//       iconId: workspaces.iconId,
+//       data: workspaces.data,
+//       inTrash: workspaces.inTrash,
+//       logo: workspaces.logo,
+//       bannerUrl: workspaces.bannerUrl,
+//     })
+//   )
+// }
+
+// export const getFiles = async (folderId: string) => {
+//   const isValid = validate(folderId)
+//   if (!isValid) return { data: null, error: "Error" }
+//   try {
+//     const results = (await db
+//       .select()
+//       .from(files)
+//       .orderBy(files.createdAt)
+//       .where(eq(files.folderId, folderId))) as File[] | []
+//     return { data: results, error: null }
+//   } catch (error) {
+//     console.log(error)
+//     return { data: null, error: "Error" }
+//   }
+// }
