@@ -10,6 +10,7 @@ import {
 } from "@/lib/supabase/queries"
 import { redirect } from "next/navigation"
 import { twMerge } from "tailwind-merge"
+import WorkspaceDropdown from "./workspace-dropdown"
 
 interface SidebarProps {
   params: { workspaceId: string }
@@ -34,7 +35,7 @@ const Sidebar: React.FC<SidebarProps> = async ({ params, className }) => {
 
   if (subscriptionError || foldersError) redirect("/dashboard")
 
-  const [privateWorkspaces, collaboratingWorkspace, sharedWorkspaces] =
+  const [privateWorkspaces, collaboratingWorkspaces, sharedWorkspaces] =
     await Promise.all([
       getPrivateWorkspaces(user.id),
       getCollaboratingWorkspaces(user.id),
@@ -48,7 +49,18 @@ const Sidebar: React.FC<SidebarProps> = async ({ params, className }) => {
         className
       )}
     >
-      <div>Sidebar</div>
+      <div>
+        <WorkspaceDropdown
+          privateWorkspaces={privateWorkspaces}
+          sharedWorkspaces={sharedWorkspaces}
+          collaboratingWorkspaces={collaboratingWorkspaces}
+          defaultValue={[
+            ...privateWorkspaces,
+            ...collaboratingWorkspaces,
+            ...sharedWorkspaces,
+          ].find((workspace) => workspace.id === params.workspaceId)}
+        />
+      </div>
     </aside>
   )
 }
