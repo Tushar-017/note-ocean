@@ -3,6 +3,8 @@ import { useAppState } from "@/lib/providers/state-provider"
 import { workspace } from "@/lib/supabase/supabase.types"
 import React, { useEffect, useState } from "react"
 import SelectedWorkspace from "./selected-workspace"
+import CustomDialogTrigger from "../global/custom-dialog-trigger"
+import WorkspaceCreator from "../global/workspace-creator"
 
 interface WorkspaceDropdownProps {
   privateWorkspaces: workspace[] | []
@@ -81,7 +83,7 @@ const WorkspaceDropdown: React.FC<WorkspaceDropdownProps> = ({
       "
         >
           <div className="rounded-md flex flex-col">
-            {/* <div className="!p-2">
+            <div className="!p-2">
               {!!privateWorkspaces.length && (
                 <>
                   <p className="text-muted-foreground">Private</p>
@@ -151,7 +153,7 @@ const WorkspaceDropdown: React.FC<WorkspaceDropdownProps> = ({
                 </article>
                 Create workspace
               </div>
-            </CustomDialogTrigger> */}
+            </CustomDialogTrigger>
           </div>
         </div>
       )}

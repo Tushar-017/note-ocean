@@ -7,7 +7,7 @@ import React, { useEffect, useState } from "react"
 
 interface SelectedWorkspaceProps {
   workspace: workspace
-  onClick?: () => void
+  onClick?: (option: workspace) => void
 }
 
 const SelectedWorkspace: React.FC<SelectedWorkspaceProps> = ({
@@ -30,7 +30,7 @@ const SelectedWorkspace: React.FC<SelectedWorkspaceProps> = ({
     <Link
       href={`/dashboard/${workspace.id}`}
       onClick={() => {
-        if (onClick) onClick()
+        if (onClick) onClick(workspace)
       }}
       className="flex 
       rounded-md 
@@ -53,7 +53,7 @@ const SelectedWorkspace: React.FC<SelectedWorkspaceProps> = ({
         objectFit="cover"
       />
       <div className="flex flex-col">
-        <p className="text-lg overflow-hidden overflow-ellipsis w-[170pc] whitespace-nowrap">
+        <p className="text-lg overflow-hidden overflow-ellipsis w-[170px] whitespace-nowrap">
           {workspace.title}
         </p>
       </div>
