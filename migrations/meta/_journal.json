@@ -15,6 +15,13 @@
       "when": 1704264690738,
       "tag": "0001_brown_aqueduct",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1704656997319,
+      "tag": "0002_shallow_post",
+      "breakpoints": true
     }
   ]
 }
