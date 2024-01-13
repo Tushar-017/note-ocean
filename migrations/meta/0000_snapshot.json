@@ -1,5 +1,5 @@
 {
-  "id": "11a8d45f-8c06-4419-b04e-98b406a338a9",
+  "id": "c8e3b465-ac35-4b95-ad50-0aea23014f59",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "5",
   "dialect": "pg",
@@ -186,7 +186,8 @@
           "name": "created_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true,
+          "default": "now()"
         },
         "workspace_owner": {
           "name": "workspace_owner",

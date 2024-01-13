@@ -1,6 +1,6 @@
 "use server"
 import { validate } from "uuid"
-import { folders, users, workspaces } from "../../../migrations/schema"
+import { files, folders, users, workspaces } from "../../../migrations/schema"
 import db from "./db"
 import { Folder, Subscription, User, workspace } from "./supabase.types"
 import { and, eq, ilike, notExists } from "drizzle-orm"
@@ -72,7 +72,7 @@ export const getPrivateWorkspaces = async (userId: string) => {
           db
             .select()
             .from(collaborators)
-            .where(eq(collaborators.workspacesId, workspaces.id))
+            .where(eq(collaborators.workspaceId, workspaces.id))
         ),
         eq(workspaces.workspaceOwner, userId)
       )
@@ -96,7 +96,7 @@ export const getCollaboratingWorkspaces = async (userId: string) => {
     })
     .from(users)
     .innerJoin(collaborators, eq(users.id, collaborators.userId))
-    .innerJoin(workspaces, eq(collaborators.workspacesId, workspaces.id))
+    .innerJoin(workspaces, eq(collaborators.workspaceId, workspaces.id))
     .where(eq(users.id, userId))) as workspace[]
 
   return collaboratedWorkspaces
@@ -116,10 +116,10 @@ export const getSharedWorkspaces = async (userId: string) => {
       logo: workspaces.logo,
       bannerUrl: workspaces.bannerUrl,
     })
-    .from(users)
-    .innerJoin(collaborators, eq(users.id, collaborators.userId))
-    .innerJoin(workspaces, eq(collaborators.workspacesId, workspaces.id))
-    .where(eq(users.id, userId))) as workspace[]
+    .from(workspaces)
+    .orderBy(workspaces.createdAt)
+    .innerJoin(collaborators, eq(workspaces.id, collaborators.workspaceId))
+    .where(eq(workspaces.workspaceOwner, userId))) as workspace[]
   return sharedWorkspaces
 }
 
@@ -130,7 +130,7 @@ export const addCollaborators = async (users: User[], workspaceId: string) => {
         and(eq(u.userId, user.id), eq(u.workspaceId, workspaceId)),
     })
     if (!userExists)
-      await db.insert(collaborators).values({ workspacesId, userId: user.id })
+      await db.insert(collaborators).values({ workspaceId, userId: user.id })
   })
 }
 

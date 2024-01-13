@@ -1,6 +1,6 @@
 {
-  "id": "5add9e55-4d71-4c44-8dc2-00c4bde655a9",
-  "prevId": "11a8d45f-8c06-4419-b04e-98b406a338a9",
+  "id": "f445bc07-96f3-4a4c-9fdf-ec4e71bc7d9a",
+  "prevId": "c8e3b465-ac35-4b95-ad50-0aea23014f59",
   "version": "5",
   "dialect": "pg",
   "tables": {
@@ -8,6 +8,13 @@
       "name": "collaborators",
       "schema": "",
       "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
         "workspace_id": {
           "name": "workspace_id",
           "type": "uuid",
@@ -57,6 +64,28 @@
           "onUpdate": "no action"
         }
       },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "customers": {
+      "name": "customers",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "stripe_customer_id": {
+          "name": "stripe_customer_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
@@ -364,7 +393,8 @@
           "name": "created_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true,
+          "default": "now()"
         },
         "workspace_owner": {
           "name": "workspace_owner",

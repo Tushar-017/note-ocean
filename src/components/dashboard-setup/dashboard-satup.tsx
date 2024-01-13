@@ -37,7 +37,7 @@ const DashboardSetup: React.FC<DashboardSetupProps> = ({
   const router = useRouter()
   const { dispatch } = useAppState()
   const supabase = createClientComponentClient()
-  const [selectedEmoji, setSelectedEmoji] = useState("🔒")
+  const [selectedEmoji, setSelectedEmoji] = useState("💼")
 
   const {
     register,

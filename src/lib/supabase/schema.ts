@@ -1,4 +1,4 @@
-import { sql } from "drizzle-orm"
+import { relations, sql } from "drizzle-orm"
 import {
   bigint,
   boolean,
@@ -10,9 +10,11 @@ import {
   uuid,
 } from "drizzle-orm/pg-core"
 import {
+  prices,
   pricingPlanInterval,
   pricingType,
   subscriptionStatus,
+  users,
 } from "../../../migrations/schema"
 
 export const workspaces = pgTable("workspaces", {
@@ -34,7 +36,10 @@ export const workspaces = pgTable("workspaces", {
 
 export const folders = pgTable("folders", {
   id: uuid("id").defaultRandom().primaryKey().notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+  createdAt: timestamp("created_at", {
+    withTimezone: true,
+    mode: "string",
+  })
     .defaultNow()
     .notNull(),
   title: text("title").notNull(),
@@ -44,12 +49,17 @@ export const folders = pgTable("folders", {
   bannerUrl: text("banner_url"),
   workspaceId: uuid("workspace_id")
     .notNull()
-    .references(() => workspaces.id, { onDelete: "cascade" }),
+    .references(() => workspaces.id, {
+      onDelete: "cascade",
+    }),
 })
 
 export const files = pgTable("files", {
   id: uuid("id").defaultRandom().primaryKey().notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+  createdAt: timestamp("created_at", {
+    withTimezone: true,
+    mode: "string",
+  })
     .defaultNow()
     .notNull(),
   title: text("title").notNull(),
@@ -59,50 +69,54 @@ export const files = pgTable("files", {
   bannerUrl: text("banner_url"),
   workspaceId: uuid("workspace_id")
     .notNull()
-    .references(() => workspaces.id, { onDelete: "cascade" }),
+    .references(() => workspaces.id, {
+      onDelete: "cascade",
+    }),
   folderId: uuid("folder_id")
     .notNull()
-    .references(() => folders.id, { onDelete: "cascade" }),
+    .references(() => folders.id, {
+      onDelete: "cascade",
+    }),
 })
 
-export const users = pgTable("users", {
-  id: uuid("id").primaryKey().notNull(),
-  fullName: text("full_name"),
-  avatarUrl: text("avatar_url"),
-  billingAddress: jsonb("billing_address"),
-  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" }),
-  paymentMethod: jsonb("payment_method"),
-  email: text("email"),
-})
+// export const users = pgTable("users", {
+//   id: uuid("id").primaryKey().notNull(),
+//   fullName: text("full_name"),
+//   avatarUrl: text("avatar_url"),
+//   billingAddress: jsonb("billing_address"),
+//   updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" }),
+//   paymentMethod: jsonb("payment_method"),
+//   email: text("email"),
+// })
 
 export const customers = pgTable("customers", {
   id: uuid("id").primaryKey().notNull(),
   stripeCustomerId: text("stripe_customer_id"),
 })
 
-export const products = pgTable("products", {
-  id: text("id").primaryKey().notNull(),
-  active: boolean("active"),
-  name: text("name"),
-  description: text("description"),
-  image: text("image"),
-  metadata: jsonb("metadata"),
-})
+// export const products = pgTable("products", {
+//   id: text("id").primaryKey().notNull(),
+//   active: boolean("active"),
+//   name: text("name"),
+//   description: text("description"),
+//   image: text("image"),
+//   metadata: jsonb("metadata"),
+// })
 
-export const prices = pgTable("prices", {
-  id: text("id").primaryKey().notNull(),
-  productId: text("product_id").references(() => products.id),
-  active: boolean("active"),
-  description: text("description"),
-  // You can use { mode: "bigint" } if numbers are exceeding js number limitations
-  unitAmount: bigint("unit_amount", { mode: "number" }),
-  currency: text("currency"),
-  type: pricingType("type"),
-  interval: pricingPlanInterval("interval"),
-  intervalCount: integer("interval_count"),
-  trialPeriodDays: integer("trial_period_days"),
-  metadata: jsonb("metadata"),
-})
+// export const prices = pgTable("prices", {
+//   id: text("id").primaryKey().notNull(),
+//   productId: text("product_id").references(() => products.id),
+//   active: boolean("active"),
+//   description: text("description"),
+//   // You can use { mode: "bigint" } if numbers are exceeding js number limitations
+//   unitAmount: bigint("unit_amount", { mode: "number" }),
+//   currency: text("currency"),
+//   type: pricingType("type"),
+//   interval: pricingPlanInterval("interval"),
+//   intervalCount: integer("interval_count"),
+//   trialPeriodDays: integer("trial_period_days"),
+//   metadata: jsonb("metadata"),
+// })
 
 export const subscriptions = pgTable("subscriptions", {
   id: text("id").primaryKey().notNull(),
@@ -151,10 +165,13 @@ export const subscriptions = pgTable("subscriptions", {
 
 export const collaborators = pgTable("collaborators", {
   id: uuid("id").defaultRandom().primaryKey().notNull(),
-  workspacesId: uuid("workspace_id")
+  workspaceId: uuid("workspace_id")
     .notNull()
     .references(() => workspaces.id, { onDelete: "cascade" }),
-  createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+  createdAt: timestamp("created_at", {
+    withTimezone: true,
+    mode: "string",
+  })
     .defaultNow()
     .notNull(),
   userId: uuid("user_id")
