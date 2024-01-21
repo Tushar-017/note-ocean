@@ -1,8 +1,14 @@
+"use client"
 import { useAppState } from "@/lib/providers/state-provider"
 import { Folder } from "@/lib/supabase/supabase.types"
 import React, { FC, useEffect, useState } from "react"
 import { useToast } from "../ui/use-toast"
 import { useSupabaseUser } from "@/lib/providers/supabase-user-provider"
+import TooltipComponent from "../global/tooltip-component"
+import { PlusIcon } from "lucide-react"
+import { v4 } from "uuid"
+import { createFolder } from "@/lib/supabase/queries"
+import { Accordion } from "../ui/accordion"
 
 interface FoldersDropdownListProps {
   workspaceFolders: Folder[]
@@ -18,6 +24,37 @@ const FolderDropdownList: FC<FoldersDropdownListProps> = ({
   const { toast } = useToast()
   const [folders, setFolders] = useState(workspaceFolders)
   const { subscription } = useSupabaseUser()
+
+  const addFolderHandler = async () => {
+    // if(folders.length >= 3 && !subscription){}
+    const newFolder: Folder = {
+      data: null,
+      id: v4(),
+      createdAt: new Date().toISOString(),
+      title: "Untitled",
+      iconId: "📁",
+      inTrash: null,
+      workspaceId,
+      bannerUrl: "",
+    }
+    dispatch({
+      type: "ADD_FOLDER",
+      payload: { workspaceId, folder: { ...newFolder, files: [] } },
+    })
+    const { data, error } = await createFolder(newFolder)
+    if (error) {
+      toast({
+        title: "Error",
+        variant: "destructive",
+        description: "Could not create the folder",
+      })
+    } else {
+      toast({
+        title: "Success",
+        description: "Created folder",
+      })
+    }
+  }
 
   useEffect(() => {
     if (workspaceFolders.length > 0) {
@@ -67,7 +104,25 @@ const FolderDropdownList: FC<FoldersDropdownListProps> = ({
         >
           FOLDERS
         </span>
+        <TooltipComponent message="Create Folder">
+          <PlusIcon
+            size={16}
+            className="group-hover/title:inline-block hidden cursor-pointer hover:dark:text-white"
+            onClick={addFolderHandler}
+          />
+        </TooltipComponent>
       </div>
+      <Accordion
+        type="multiple"
+        defaultValue={[folderId || ""]}
+        className="pb-20"
+      >
+        {folders
+          .filter((folder) => !folder.inTrash)
+          .map((folder) => (
+            <div key={folder.id}>F</div>
+          ))}
+      </Accordion>
     </>
   )
 }
