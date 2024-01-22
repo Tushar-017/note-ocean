@@ -50,7 +50,7 @@ const SelectedWorkspace: React.FC<SelectedWorkspaceProps> = ({
         width={26}
         height={26}
         priority={true}
-        objectFit="cover"
+        // objectFit="cover"
       />
       <div className="flex flex-col">
         <p className="text-lg overflow-hidden overflow-ellipsis w-[170px] whitespace-nowrap">

@@ -2,7 +2,7 @@
 import { validate } from "uuid"
 import { files, folders, users, workspaces } from "../../../migrations/schema"
 import db from "./db"
-import { Folder, Subscription, User, workspace } from "./supabase.types"
+import { File, Folder, Subscription, User, workspace } from "./supabase.types"
 import { and, eq, ilike, notExists } from "drizzle-orm"
 import { collaborators } from "./schema"
 
@@ -144,6 +144,42 @@ export const createFolder = async (folder: Folder) => {
   }
 }
 
+export const createFile = async (file: File) => {
+  try {
+    await db.insert(files).values(file)
+    return { data: null, error: null }
+  } catch (error) {
+    console.log(error)
+    return { data: null, error: "Error" }
+  }
+}
+
+export const updateFolder = async (
+  folder: Partial<Folder>,
+  folderId: string
+) => {
+  try {
+    await db.update(folders).set(folder).where(eq(folders.id, folderId))
+    return { data: null, error: null }
+  } catch (error) {
+    console.log(error)
+    return { data: null, error: "Error" }
+  }
+}
+
+export const updateFile = async (file: Partial<File>, fileId: string) => {
+  try {
+    const response = await db
+      .update(files)
+      .set(file)
+      .where(eq(files.id, fileId))
+    return { data: null, error: null }
+  } catch (error) {
+    console.log(error)
+    return { data: null, error: "Error" }
+  }
+}
+
 export const getUsersFromSearch = async (email: string) => {
   if (!email) return []
   const accounts = db
@@ -153,18 +189,18 @@ export const getUsersFromSearch = async (email: string) => {
   return accounts
 }
 
-// export const getFiles = async (folderId: string) => {
-//   const isValid = validate(folderId)
-//   if (!isValid) return { data: null, error: "Error" }
-//   try {
-//     const results = (await db
-//       .select()
-//       .from(files)
-//       .orderBy(files.createdAt)
-//       .where(eq(files.folderId, folderId))) as File[] | []
-//     return { data: results, error: null }
-//   } catch (error) {
-//     console.log(error)
-//     return { data: null, error: "Error" }
-//   }
-// }
+export const getFiles = async (folderId: string) => {
+  const isValid = validate(folderId)
+  if (!isValid) return { data: null, error: "Error" }
+  try {
+    const results = (await db
+      .select()
+      .from(files)
+      .orderBy(files.createdAt)
+      .where(eq(files.folderId, folderId))) as File[] | []
+    return { data: results, error: null }
+  } catch (error) {
+    console.log(error)
+    return { data: null, error: "Error" }
+  }
+}
