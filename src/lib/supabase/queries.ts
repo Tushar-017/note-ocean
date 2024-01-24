@@ -167,6 +167,23 @@ export const updateFolder = async (
   }
 }
 
+export const updateWorkspace = async (
+  workspace: Partial<workspace>,
+  workspaceId: string
+) => {
+  if (!workspaceId) return
+  try {
+    await db
+      .update(workspaces)
+      .set(workspace)
+      .where(eq(workspaces.id, workspaceId))
+    return { data: null, error: null }
+  } catch (error) {
+    console.log(error)
+    return { data: null, error: "Error" }
+  }
+}
+
 export const updateFile = async (file: Partial<File>, fileId: string) => {
   try {
     const response = await db
