@@ -10,6 +10,14 @@ import {
   updateFile,
   updateFolder,
 } from "@/lib/supabase/queries"
+import { usePathname } from "next/navigation"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "../ui/tooltip"
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
 
 interface QuillEditorProps {
   dirDetails: File | Folder | workspace
@@ -40,6 +48,10 @@ var TOOLBAR_OPTIONS = [
 const QuillEditor: FC<QuillEditorProps> = ({ dirDetails, dirType, fileId }) => {
   const { state, workspaceId, folderId, dispatch } = useAppState()
   const [quill, setQuill] = useState<any>(null)
+  const pathname = usePathname()
+  const [collaborators, setCollaborators] = useState<
+    { id: string; email: string; avatarUrl: string }[]
+  >([])
 
   const details = useMemo(() => {
     let selectedDir
@@ -71,6 +83,46 @@ const QuillEditor: FC<QuillEditorProps> = ({ dirDetails, dirType, fileId }) => {
       bannerUrl: dirDetails.bannerUrl,
     } as workspace | Folder | File
   }, [state, workspaceId, folderId])
+
+  const breadCrumbs = useMemo(() => {
+    if (!pathname || !state.workspaces || !workspaceId) return
+    const segments = pathname
+      .split("/")
+      .filter((val) => val !== "dashboard" && val)
+    const workspaceDetails = state.workspaces.find(
+      (workspace) => workspace.id === workspaceId
+    )
+    const workspaceBreadCrumb = workspaceDetails
+      ? `${workspaceDetails.iconId} ${workspaceDetails.title}`
+      : ""
+
+    if (segments.length === 1) {
+      return workspaceBreadCrumb
+    }
+
+    const folderSegment = segments[1]
+    const folderDetails = workspaceDetails?.folders.find(
+      (folder) => folder.id === folderSegment
+    )
+
+    const folderBreadCrumb = folderDetails
+      ? `/${folderDetails.iconId} ${folderDetails.title}`
+      : ""
+
+    if (segments.length === 2) {
+      return `${workspaceBreadCrumb} ${folderBreadCrumb}`
+    }
+
+    const fileSegment = segments[2]
+    const fileDetails = folderDetails?.files.find(
+      (file) => file.id === fileSegment
+    )
+    const fileBreadCrumb = fileDetails
+      ? `/ ${fileDetails.iconId} ${fileDetails.title}`
+      : ""
+
+    return `${workspaceBreadCrumb} ${folderBreadCrumb} ${fileBreadCrumb}`
+  }, [state, pathname, workspaceId])
 
   const wrapperRef = useCallback(async (wrapper: any) => {
     if (typeof window !== "undefined") {
@@ -183,8 +235,36 @@ const QuillEditor: FC<QuillEditorProps> = ({ dirDetails, dirType, fileId }) => {
                 Delete
               </Button>
             </div>
+            <span className="text-sm text-white">{details.inTrash}</span>
           </article>
         )}
+        <div
+          className="flex 
+        flex-col-reverse 
+        sm:flex-row 
+        sm:justify-between 
+        justify-center 
+        sm:items-center 
+        sm:p-2 
+        p-8"
+        >
+          <div>{breadCrumbs}</div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center justify-center h-10">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Avatar className="-ml-3 bg-background border-2 flex items-center justify-center border-white h-8 w-8 rounded-full">
+                      <AvatarImage className="rounded-full" />
+                      <AvatarFallback>TR</AvatarFallback>
+                    </Avatar>
+                  </TooltipTrigger>
+                  <TooltipContent>User name</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+          </div>
+        </div>
       </div>
       <div className="flex flex-col justify-center items-center mt-2 relative">
         <div id="container" className="max-w[800px]" ref={wrapperRef}></div>
