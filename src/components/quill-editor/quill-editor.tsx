@@ -9,6 +9,7 @@ import {
   deleteFolder,
   updateFile,
   updateFolder,
+  updateWorkspace,
 } from "@/lib/supabase/queries"
 import { usePathname } from "next/navigation"
 import {
@@ -18,6 +19,11 @@ import {
   TooltipTrigger,
 } from "../ui/tooltip"
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
+import { Badge } from "../ui/badge"
+import Image from "next/image"
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
+import EmojiPicker from "../global/EmojiPicker"
+import BannerUpload from "../banner-upload/banner-upload"
 
 interface QuillEditorProps {
   dirDetails: File | Folder | workspace
@@ -46,12 +52,14 @@ var TOOLBAR_OPTIONS = [
 ]
 
 const QuillEditor: FC<QuillEditorProps> = ({ dirDetails, dirType, fileId }) => {
+  const supabase = createClientComponentClient()
   const { state, workspaceId, folderId, dispatch } = useAppState()
   const [quill, setQuill] = useState<any>(null)
   const pathname = usePathname()
   const [collaborators, setCollaborators] = useState<
     { id: string; email: string; avatarUrl: string }[]
   >([])
+  const [saving, setSaving] = useState(false)
 
   const details = useMemo(() => {
     let selectedDir
@@ -186,6 +194,33 @@ const QuillEditor: FC<QuillEditorProps> = ({ dirDetails, dirType, fileId }) => {
     }
   }
 
+  const iconOnChange = async (icon: string) => {
+    if (!fileId) return
+    if (dirType === "workspace") {
+      dispatch({
+        type: "UPDATE_WORKSPACE",
+        payload: { workspace: { iconId: icon }, workspaceId: fileId },
+      })
+      await updateWorkspace({ iconId: icon }, fileId)
+    }
+    if (dirType === "folder") {
+      if (!workspaceId) return
+      dispatch({
+        type: "UPDATE_FOLDER",
+        payload: { folder: { iconId: icon }, workspaceId, folderId: fileId },
+      })
+      await updateFolder({ iconId: icon }, fileId)
+    }
+    if (dirType === "file") {
+      if (!workspaceId || !folderId) return
+      dispatch({
+        type: "UPDATE_FILE",
+        payload: { file: { iconId: icon }, workspaceId, folderId, fileId },
+      })
+      await updateFile({ iconId: icon }, fileId)
+    }
+  }
+
   return (
     <>
       <div className="relative">
@@ -251,22 +286,104 @@ const QuillEditor: FC<QuillEditorProps> = ({ dirDetails, dirType, fileId }) => {
           <div>{breadCrumbs}</div>
           <div className="flex items-center gap-4">
             <div className="flex items-center justify-center h-10">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Avatar className="-ml-3 bg-background border-2 flex items-center justify-center border-white h-8 w-8 rounded-full">
-                      <AvatarImage className="rounded-full" />
-                      <AvatarFallback>TR</AvatarFallback>
-                    </Avatar>
-                  </TooltipTrigger>
-                  <TooltipContent>User name</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              {collaborators?.map((collaborator) => (
+                <TooltipProvider key={collaborator.id}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Avatar
+                        className="
+                    -ml-3 
+                    bg-background 
+                    border-2 
+                    flex 
+                    items-center 
+                    justify-center 
+                    border-white 
+                    h-8 
+                    w-8 
+                    rounded-full
+                    "
+                      >
+                        <AvatarImage
+                          src={
+                            collaborator.avatarUrl ? collaborator.avatarUrl : ""
+                          }
+                          className="rounded-full"
+                        />
+                        <AvatarFallback>
+                          {collaborator.email.substring(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                    </TooltipTrigger>
+                    <TooltipContent>{collaborator.email}</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              ))}
             </div>
+            {saving ? (
+              <Badge
+                variant="secondary"
+                className="bg-orange-600 top-4
+                text-white
+                right-4
+                z-50
+                "
+              >
+                Saving...
+              </Badge>
+            ) : (
+              <Badge
+                variant="secondary"
+                className="bg-emerald-600 
+                top-4
+              text-white
+              right-4
+              z-50
+              "
+              >
+                Saved
+              </Badge>
+            )}
           </div>
         </div>
       </div>
+      {details.bannerUrl && (
+        <div className="relative w-full h-[200px]">
+          <Image
+            src={
+              // supabase.storage
+              //   .from("file-banners")
+              //   .getPublicUrl(details.bannerUrl).data.publicUrl
+              "/BannerImage.png"
+            }
+            fill
+            className="w-full md:h-48
+            h-20
+            object-cover"
+            alt="Banner Image"
+          />
+        </div>
+      )}
       <div className="flex flex-col justify-center items-center mt-2 relative">
+        <div className="w-full self-center max-w-[800px] flex flex-col px-7 lg:my-8">
+          <div className="text-[80px]">
+            <EmojiPicker getValue={iconOnChange}>
+              <div className="w-[100px] cursor-pointer transition-colors h-[100px] flex items-center justify-center hover:bg-muted rounded-xl">
+                {details.iconId}
+              </div>
+            </EmojiPicker>
+          </div>
+          <div className="flex">
+            <BannerUpload
+              // details={details}
+              id={fileId}
+              dirType={dirType}
+              className="mt-2 text-sm text-muted-foreground p-2 hover:text-card-foreground transition-all rounded-md"
+            >
+              {details.bannerUrl ? "Update Banner" : "Add Banner"}
+            </BannerUpload>
+          </div>
+        </div>
         <div id="container" className="max-w[800px]" ref={wrapperRef}></div>
       </div>
     </>
