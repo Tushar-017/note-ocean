@@ -30,7 +30,7 @@ const BannerUploadForm: FC<BannerUploadFormProps> = ({ dirType, id }) => {
     formState: { isSubmitting: isUploading, errors },
   } = useForm<z.infer<typeof UploadBannerFormSchema>>({
     mode: "onChange",
-    // resolver: zodResolver(UploadBannerFormSchema),
+    resolver: zodResolver(UploadBannerFormSchema),
     defaultValues: {
       banner: "",
     },

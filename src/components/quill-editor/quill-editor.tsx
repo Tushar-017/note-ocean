@@ -1,17 +1,27 @@
 "use client"
 import { useAppState } from "@/lib/providers/state-provider"
 import { File, Folder, workspace } from "@/lib/supabase/supabase.types"
-import React, { FC, useCallback, useMemo, useState } from "react"
+import React, {
+  FC,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react"
 import "quill/dist/quill.snow.css"
 import { Button } from "../ui/button"
 import {
   deleteFile,
   deleteFolder,
+  getFileDetails,
+  getFolderDetails,
+  getWorkspaceDetails,
   updateFile,
   updateFolder,
   updateWorkspace,
 } from "@/lib/supabase/queries"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import {
   Tooltip,
   TooltipContent,
@@ -25,6 +35,8 @@ import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import EmojiPicker from "../global/EmojiPicker"
 import BannerUpload from "../banner-upload/banner-upload"
 import { XCircleIcon } from "lucide-react"
+import { useSocket } from "@/lib/providers/socket-provider"
+import { useSupabaseUser } from "@/lib/providers/supabase-user-provider"
 
 interface QuillEditorProps {
   dirDetails: File | Folder | workspace
@@ -55,7 +67,11 @@ var TOOLBAR_OPTIONS = [
 const QuillEditor: FC<QuillEditorProps> = ({ dirDetails, dirType, fileId }) => {
   const supabase = createClientComponentClient()
   const { state, workspaceId, folderId, dispatch } = useAppState()
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout>>()
   const [quill, setQuill] = useState<any>(null)
+  const { user } = useSupabaseUser()
+  const router = useRouter()
+  const { socket, isConnected } = useSocket()
   const pathname = usePathname()
   const [collaborators, setCollaborators] = useState<
     { id: string; email: string; avatarUrl: string }[]
@@ -257,6 +273,166 @@ const QuillEditor: FC<QuillEditorProps> = ({ dirDetails, dirType, fileId }) => {
     }
     setDeletingBanner(false)
   }
+
+  useEffect(() => {
+    if (!fileId) return
+    let selectedDir
+    const fetchInformation = async () => {
+      if (dirType === "file") {
+        const { data: selectedDir, error } = await getFileDetails(fileId)
+        if (error || !selectedDir) {
+          return router.replace("/dashboard")
+        }
+        if (!selectedDir[0]) {
+          if (!workspaceId) return
+          return router.replace(`/dashboard/${workspaceId}`)
+        }
+        if (!workspaceId || quill === null) return
+        if (!selectedDir[0].data) return
+        quill.setContents(JSON.parse(selectedDir[0].data || ""))
+        dispatch({
+          type: "UPDATE_FILE",
+          payload: {
+            file: { data: selectedDir[0].data },
+            fileId,
+            folderId: selectedDir[0].folderId,
+            workspaceId,
+          },
+        })
+      }
+      if (dirType === "folder") {
+        const { data: selectedDir, error } = await getFolderDetails(fileId)
+        if (error || !selectedDir) {
+          return router.replace("/dashboard")
+        }
+
+        if (!selectedDir[0]) {
+          router.replace(`/dashboard/${workspaceId}`)
+        }
+        if (quill === null) return
+        if (!selectedDir[0].data) return
+        quill.setContents(JSON.parse(selectedDir[0].data || ""))
+        dispatch({
+          type: "UPDATE_FOLDER",
+          payload: {
+            folderId: fileId,
+            folder: { data: selectedDir[0].data },
+            workspaceId: selectedDir[0].workspaceId,
+          },
+        })
+      }
+      if (dirType === "workspace") {
+        const { data: selectedDir, error } = await getWorkspaceDetails(fileId)
+        if (error || !selectedDir) {
+          return router.replace("/dashboard")
+        }
+        if (!selectedDir[0] || quill === null) return
+        if (!selectedDir[0].data) return
+        quill.setContents(JSON.parse(selectedDir[0].data || ""))
+        dispatch({
+          type: "UPDATE_WORKSPACE",
+          payload: {
+            workspace: { data: selectedDir[0].data },
+            workspaceId: fileId,
+          },
+        })
+      }
+    }
+    fetchInformation()
+  }, [fileId, workspaceId, quill, dirType])
+
+  // useEffect(() => {
+  //   if (quill === null || socket === null || !fileId) return
+  //   const socketHandler = (range: any, roomId: string, cursorId: string) => {
+  //     if (roomId === fileId) {
+  //       // const cursorToMove = localCursors.find(
+  //       //   (c: any) => c.cursors()?.[0].id === cursorId
+  //       // )
+  //       // if (cursorToMove) {
+  //       //   cursorToMove.moveCursor(cursorId, range)
+  //       // }
+  //     }
+  //   }
+  //   socket.on("receive-cursor-move", socketHandler)
+  //   return () => {
+  //     socket.off("receive-cursor-move", socketHandler)
+  //   }
+  // }, [quill, socket, fileId])
+
+  //rooms
+  useEffect(() => {
+    if (socket === null || quill === null || !fileId) return
+    socket.emit("create-room", fileId)
+  }, [socket, quill, fileId])
+
+  //Send quill changes to all clients
+  useEffect(() => {
+    if (quill === null || socket === null || !fileId || !user) return
+
+    // const selectionChangeHandler = (cursorId: string) => {
+    //   return (range: any, oldRange: any, source: any) => {
+    //     if (source === "user" && cursorId) {
+    //       socket.emit("send-cursor-move", range, fileId, cursorId)
+    //     }
+    //   }
+    // }
+    const quillHandler = (delta: any, oldDelta: any, source: any) => {
+      if (source !== "user") return
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+      setSaving(true)
+      const contents = quill.getContents()
+      const quillLength = quill.getLength()
+      saveTimerRef.current = setTimeout(async () => {
+        if (contents && quillLength !== 1 && fileId) {
+          if (dirType == "workspace") {
+            dispatch({
+              type: "UPDATE_WORKSPACE",
+              payload: {
+                workspace: { data: JSON.stringify(contents) },
+                workspaceId: fileId,
+              },
+            })
+            await updateWorkspace({ data: JSON.stringify(contents) }, fileId)
+          }
+          if (dirType == "folder") {
+            if (!workspaceId) return
+            dispatch({
+              type: "UPDATE_FOLDER",
+              payload: {
+                folder: { data: JSON.stringify(contents) },
+                workspaceId,
+                folderId: fileId,
+              },
+            })
+            await updateFolder({ data: JSON.stringify(contents) }, fileId)
+          }
+          if (dirType == "file") {
+            if (!workspaceId || !folderId) return
+            dispatch({
+              type: "UPDATE_FILE",
+              payload: {
+                file: { data: JSON.stringify(contents) },
+                workspaceId,
+                folderId: folderId,
+                fileId,
+              },
+            })
+            await updateFile({ data: JSON.stringify(contents) }, fileId)
+          }
+        }
+        setSaving(false)
+      }, 850)
+      socket.emit("send-changes", delta, fileId)
+    }
+    quill.on("text-change", quillHandler)
+    // quill.on("selection-change", selectionChangeHandler(user.id))
+
+    return () => {
+      quill.off("text-change", quillHandler)
+      // quill.off("selection-change", selectionChangeHandler)
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+    }
+  }, [quill, socket, fileId, user, details, folderId, workspaceId, dispatch])
 
   return (
     <>

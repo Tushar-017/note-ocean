@@ -8,13 +8,13 @@ type SocketContextType = {
   isConnected: boolean
 }
 
-const SocketConnect = createContext<SocketContextType>({
+const SocketContext = createContext<SocketContextType>({
   socket: null,
   isConnected: false,
 })
 
 export const useSocket = () => {
-  return useContext(SocketConnect)
+  return useContext(SocketContext)
 }
 
 export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
@@ -43,4 +43,10 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
       socketInstance.disconnect()
     }
   }, [])
+
+  return (
+    <SocketContext.Provider value={{ socket, isConnected }}>
+      {children}
+    </SocketContext.Provider>
+  )
 }

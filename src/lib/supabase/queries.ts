@@ -270,13 +270,31 @@ export const updateWorkspace = async (
       .update(workspaces)
       .set(workspace)
       .where(eq(workspaces.id, workspaceId))
-
+    // TODO - if the page flicker
     revalidatePath(`/dashboard/${workspaceId}`)
     return { data: null, error: null }
   } catch (error) {
     console.log(error)
     return { data: null, error: "Error" }
   }
+}
+
+export const getCollaborators = async (workspaceId: string) => {
+  const response = await db
+    .select()
+    .from(collaborators)
+    .where(eq(collaborators.workspaceId, workspaceId))
+  if (!response.length) return []
+  const userInformation: Promise<User | undefined>[] = response.map(
+    async (user) => {
+      const exists = await db.query.users.findFirst({
+        where: (u, { eq }) => eq(u.id, user.userId),
+      })
+      return exists
+    }
+  )
+  const resolveUsers = await Promise.all(userInformation)
+  return resolveUsers.filter(Boolean) as User[]
 }
 
 export const updateFile = async (file: Partial<File>, fileId: string) => {

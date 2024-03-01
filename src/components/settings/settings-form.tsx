@@ -13,6 +13,7 @@ import { Input } from "../ui/input"
 import {
   addCollaborators,
   deleteWorkspace,
+  getCollaborators,
   removeCollaborators,
   updateWorkspace,
 } from "@/lib/supabase/queries"
@@ -130,6 +131,17 @@ const SettingsForm = () => {
     )
     if (showingWorkspace) setWorkspaceDetails(showingWorkspace)
   }, [workspaceId, state])
+
+  useEffect(() => {
+    if (!workspaceId) return
+    const fetchCollaborators = async () => {
+      const response = await getCollaborators(workspaceId)
+      if (response.length) {
+        setPermissions("shared")
+        setCollaborators(response)
+      }
+    }
+  }, [workspaceId])
 
   return (
     <div className="flex gap-4 flex-col">
