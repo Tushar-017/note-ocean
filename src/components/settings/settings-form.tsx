@@ -26,6 +26,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import CollaboratorSearch from "../global/collaborator-search"
 import { Button } from "../ui/button"
 import { ScrollArea } from "../ui/scroll-area"
@@ -118,6 +129,15 @@ const SettingsForm = () => {
     } else setPermissions(val)
   }
 
+  const onClickAlertConfirm = async () => {
+    if (!workspaceId) return
+    if (collaborators.length > 0) {
+      await removeCollaborators(collaborators, workspaceId)
+    }
+    setPermissions("private")
+    setOpenAlertMessage(false)
+  }
+
   // onClicks
   // fetching avatar details
   // get workspace details
@@ -141,6 +161,7 @@ const SettingsForm = () => {
         setCollaborators(response)
       }
     }
+    fetchCollaborators()
   }, [workspaceId])
 
   return (
@@ -326,6 +347,25 @@ const SettingsForm = () => {
           </Button>
         </Alert>
       </>
+      <AlertDialog open={openAlertMessage}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDescription>
+              Changing a shared workspace to a Private workspace will remove all
+              collaborators permanently
+            </AlertDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setOpenAlertMessage(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={onClickAlertConfirm}>
+              Continue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

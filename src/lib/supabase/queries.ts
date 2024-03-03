@@ -227,6 +227,13 @@ export const removeCollaborators = async (
   })
 }
 
+export const findUser = async (userId: string) => {
+  const response = await db.query.users.findFirst({
+    where: (u, { eq }) => eq(u.id, userId),
+  })
+  return response
+}
+
 export const createFolder = async (folder: Folder) => {
   try {
     const results = await db.insert(folders).values(folder)
